@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, X, Trash2, Save, Clock, GripVertical } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, X, Trash2, Save, Zap, Cpu, Terminal } from 'lucide-react';
 
 // --- Types ---
 type ScheduleItem = {
@@ -20,52 +20,53 @@ type DayConfig = {
 
 // --- Constants ---
 const START_HOUR = 8;
-const END_HOUR = 17; // ถึง 5 โมงเย็น
-const LUNCH_HOUR = 12; // พักเที่ยงตอนเที่ยง
+const END_HOUR = 17;
+const LUNCH_HOUR = 12;
 
+// Cyberpunk Neon Palette
 const COLORS = [
-  'bg-red-200 border-red-400 text-red-800',
-  'bg-orange-200 border-orange-400 text-orange-800',
-  'bg-amber-200 border-amber-400 text-amber-800',
-  'bg-green-200 border-green-400 text-green-800',
-  'bg-emerald-200 border-emerald-400 text-emerald-800',
-  'bg-teal-200 border-teal-400 text-teal-800',
-  'bg-cyan-200 border-cyan-400 text-cyan-800',
-  'bg-blue-200 border-blue-400 text-blue-800',
-  'bg-indigo-200 border-indigo-400 text-indigo-800',
-  'bg-violet-200 border-violet-400 text-violet-800',
-  'bg-purple-200 border-purple-400 text-purple-800',
-  'bg-fuchsia-200 border-fuchsia-400 text-fuchsia-800',
-  'bg-pink-200 border-pink-400 text-pink-800',
-  'bg-rose-200 border-rose-400 text-rose-800',
-  'bg-gray-200 border-gray-400 text-gray-800',
+  'bg-cyan-500/10 border-cyan-400 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]',
+  'bg-fuchsia-500/10 border-fuchsia-400 text-fuchsia-300 shadow-[0_0_10px_rgba(232,121,249,0.3)]',
+  'bg-lime-500/10 border-lime-400 text-lime-300 shadow-[0_0_10px_rgba(163,230,53,0.3)]',
+  'bg-violet-500/10 border-violet-400 text-violet-300 shadow-[0_0_10px_rgba(167,139,250,0.3)]',
+  'bg-yellow-500/10 border-yellow-400 text-yellow-300 shadow-[0_0_10px_rgba(250,204,21,0.3)]',
+  'bg-rose-500/10 border-rose-400 text-rose-300 shadow-[0_0_10px_rgba(251,113,133,0.3)]',
+  'bg-emerald-500/10 border-emerald-400 text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.3)]',
+  'bg-orange-500/10 border-orange-400 text-orange-300 shadow-[0_0_10px_rgba(251,146,60,0.3)]',
 ];
 
 const DEFAULT_DAYS: DayConfig[] = [
-  { id: 0, name: 'จันทร์' },
-  { id: 1, name: 'อังคาร' },
-  { id: 2, name: 'พุธ' },
-  { id: 3, name: 'พฤหัสบดี' },
-  { id: 4, name: 'ศุกร์' },
+  { id: 0, name: 'MON' },
+  { id: 1, name: 'TUE' },
+  { id: 2, name: 'WED' },
+  { id: 3, name: 'THU' },
+  { id: 4, name: 'FRI' },
+];
+
+// Mockup Data for cool visuals
+const MOCKUP_DATA: ScheduleItem[] = [
+  { id: '1', dayIndex: 0, hour: 9, title: 'CYBER SECURITY', room: 'LAB-01', color: COLORS[0] },
+  { id: '2', dayIndex: 0, hour: 10, title: 'CYBER SECURITY', room: 'LAB-01', color: COLORS[0] },
+  { id: '3', dayIndex: 1, hour: 13, title: 'AI ETHICS', room: 'SERVER-ROOM', color: COLORS[1] },
+  { id: '4', dayIndex: 2, hour: 8, title: 'QUANTUM PHYS', room: 'VOID-HALL', color: COLORS[3] },
+  { id: '5', dayIndex: 3, hour: 14, title: 'NETRUNNING 101', room: 'NET-SPACE', color: COLORS[5] },
+  { id: '6', dayIndex: 4, hour: 15, title: 'ROBOTICS', room: 'MECH-BAY', color: COLORS[6] },
 ];
 
 export default function ClassSchedule() {
-  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleItem[]>(MOCKUP_DATA);
   const [days, setDays] = useState<DayConfig[]>(DEFAULT_DAYS);
   const [selectedSlot, setSelectedSlot] = useState<{ day: number; hour: number } | null>(null);
   const [editItem, setEditItem] = useState<Partial<ScheduleItem>>({});
 
-  // สร้างช่วงเวลา (Columns)
   const timeSlots = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 
-  // หา Item ใน Slot นั้นๆ
   const getItem = (dayIdx: number, hour: number) => {
     return schedule.find((item) => item.dayIndex === dayIdx && item.hour === hour);
   };
 
-  // เปิด Modal แก้ไข/เพิ่ม
   const handleSlotClick = (dayIdx: number, hour: number) => {
-    if (hour === LUNCH_HOUR) return; // ห้ามยุ่งกับเวลาพักเที่ยง
+    if (hour === LUNCH_HOUR) return;
 
     const existingItem = getItem(dayIdx, hour);
     setSelectedSlot({ day: dayIdx, hour });
@@ -87,7 +88,6 @@ export default function ClassSchedule() {
     if (!selectedSlot || !editItem.title) return;
 
     setSchedule((prev) => {
-      // ลบอันเก่าออกก่อน (ถ้ามี) แล้วใส่ new item
       const filtered = prev.filter(
         (item) => !(item.dayIndex === selectedSlot.day && item.hour === selectedSlot.hour)
       );
@@ -116,200 +116,234 @@ export default function ClassSchedule() {
     setEditItem({});
   };
 
-  // ฟังก์ชันแก้ชื่อวัน
   const handleDayNameChange = (id: number, newName: string) => {
     setDays(days.map(d => d.id === id ? { ...d, name: newName } : d));
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 font-sans text-gray-800">
+    <div className="min-h-screen bg-slate-950 p-6 font-mono text-cyan-50 selection:bg-cyan-500/30 selection:text-cyan-950 overflow-hidden relative">
       
+      {/* Ambient Background Glow */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-900/20 rounded-full blur-[100px]"></div>
+      </div>
+
       {/* Header Controls */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white p-4 shadow-sm border border-gray-100">
+      <div className="relative z-10 mb-8 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-cyan-500/30 bg-slate-900/80 p-6 shadow-[0_0_20px_rgba(6,182,212,0.15)] backdrop-blur-md">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <GripVertical className="text-indigo-600"/> 
-            ตารางเรียน
+          <h1 className="text-3xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 flex items-center gap-3 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+            <Cpu className="text-cyan-400 w-8 h-8 animate-pulse"/> 
+            NEURAL_SCHEDULE_V.2.0
           </h1>
-          <p className="text-sm text-gray-500">คลิกในช่องเวลาใดก็ได้เพื่อเพิ่มหรือแก้ไขวิชาเรียน</p>
+          <p className="text-sm text-cyan-600/70 mt-1 font-bold tracking-widest">&gt;&gt; SYSTEM READY. WAITING FOR INPUT...</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
            <button 
              onClick={() => setSchedule([])}
-             className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+             className="px-6 py-2 text-xs font-bold tracking-widest text-red-400 border border-red-500/50 bg-red-950/30 hover:bg-red-900/50 rounded transition-all shadow-[0_0_10px_rgba(248,113,113,0.1)] hover:shadow-[0_0_15px_rgba(248,113,113,0.3)] uppercase"
            >
-             ลบทั้งหมด
+             [ Reset_System ]
            </button>
         </div>
       </div>
 
-      {/* Grid Container */}
-      <div className="overflow-x-auto pb-4">
-        <div className="min-w-[1000px] rounded-xl bg-white shadow-lg border border-gray-200 overflow-hidden">
-          
-          {/* Header Row (Time) */}
-          <div className="grid border-b border-gray-200 bg-gray-50" 
-               style={{ gridTemplateColumns: `120px repeat(${timeSlots.length}, minmax(100px, 1fr))` }}>
+      {/* RGB Running Border Container */}
+      <div className="relative z-10 group rounded-xl p-[2px] overflow-hidden">
+        {/* The Animated RGB Gradient Layer */}
+        <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0_340deg,cyan_360deg)] animate-[spin_4s_linear_infinite] opacity-70"></div>
+        <div className="absolute inset-0 bg-[conic-gradient(from_180deg,transparent_0_340deg,fuchsia_360deg)] animate-[spin_4s_linear_infinite_reverse] opacity-70 mix-blend-screen"></div>
+
+        {/* Inner Content */}
+        <div className="relative w-full rounded-xl bg-slate-900/95 backdrop-blur-xl border border-white/5 overflow-x-auto pb-4">
+          <div className="min-w-[1000px]">
             
-            <div className="p-4 font-bold text-gray-400 text-xs uppercase tracking-wider flex items-center justify-center border-r border-gray-200">
-               วัน / เวลา
+            {/* Header Row (Time) */}
+            <div className="grid border-b border-cyan-900/30 bg-slate-900/50" 
+                style={{ gridTemplateColumns: `100px repeat(${timeSlots.length}, minmax(100px, 1fr))` }}>
+              
+              <div className="p-4 font-bold text-cyan-600/50 text-[10px] uppercase tracking-[0.2em] flex items-center justify-center border-r border-cyan-900/30">
+                 T_ZONE
+              </div>
+              
+              {timeSlots.map((hour) => (
+                <div 
+                  key={hour} 
+                  className={`p-3 text-center border-r border-cyan-900/30 last:border-r-0 flex flex-col justify-center relative
+                    ${hour === LUNCH_HOUR ? 'bg-stripes-dark' : ''}
+                  `}
+                >
+                  <span className="text-lg font-bold text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">
+                    {hour.toString().padStart(2, '0')}:00
+                  </span>
+                  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
+                </div>
+              ))}
             </div>
-            
-            {timeSlots.map((hour) => (
+
+            {/* Day Rows */}
+            {days.map((day) => (
               <div 
-                key={hour} 
-                className={`p-3 text-center border-r border-gray-100 last:border-r-0 flex flex-col justify-center
-                  ${hour === LUNCH_HOUR ? 'bg-stripes-gray' : ''}
-                `}
+                key={day.id} 
+                className="grid border-b border-cyan-900/30 last:border-b-0 hover:bg-cyan-900/5 transition-colors"
+                style={{ gridTemplateColumns: `100px repeat(${timeSlots.length}, minmax(100px, 1fr))` }}
               >
-                <span className="text-lg font-bold text-gray-700">{hour}:00</span>
-                <span className="text-xs text-gray-400">{hour + 1}:00</span>
+                {/* Day Name */}
+                <div className="p-2 border-r border-cyan-900/30 flex items-center justify-center bg-slate-900/50 relative">
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-cyan-600/30"></div>
+                  <input 
+                    type="text" 
+                    value={day.name}
+                    onChange={(e) => handleDayNameChange(day.id, e.target.value)}
+                    className="w-full text-center font-bold text-slate-400 bg-transparent border-none focus:ring-0 uppercase tracking-widest text-sm focus:text-cyan-300 transition-colors"
+                  />
+                </div>
+
+                {/* Slots */}
+                {timeSlots.map((hour) => {
+                  const item = getItem(day.id, hour);
+                  const isLunch = hour === LUNCH_HOUR;
+
+                  // Lunch Break (System Recharge)
+                  if (isLunch) {
+                    return (
+                      <div key={hour} className="bg-slate-950/50 border-r border-cyan-900/30 flex items-center justify-center relative overflow-hidden group/lunch">
+                         {/* Hazard Stripes */}
+                         <div className="absolute inset-0 opacity-20 bg-[linear-gradient(45deg,#000_25%,transparent_25%,transparent_50%,#000_50%,#000_75%,transparent_75%,transparent)] [background-size:20px_20px]"></div>
+                         <div className="relative z-10 flex flex-col items-center gap-1 opacity-50 group-hover/lunch:opacity-80 transition-opacity">
+                            <Zap className="w-4 h-4 text-yellow-500 animate-pulse" />
+                            <span className="text-[10px] font-bold text-yellow-500 tracking-widest whitespace-nowrap -rotate-90">
+                              RECHARGE
+                            </span>
+                         </div>
+                      </div>
+                    );
+                  }
+
+                  // Class Slot
+                  return (
+                    <div 
+                      key={hour} 
+                      onClick={() => handleSlotClick(day.id, hour)}
+                      className="relative border-r border-cyan-900/30 h-32 p-1 group cursor-pointer"
+                    >
+                      {/* Grid Line Effect */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-cyan-500/5 transition-opacity pointer-events-none"></div>
+
+                      {item ? (
+                        <div className={`h-full w-full rounded border backdrop-blur-sm p-3 flex flex-col justify-between transition-all hover:scale-[1.03] hover:brightness-110 relative overflow-hidden ${item.color}`}>
+                          {/* Scanline overlay */}
+                          <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.1)_50%)] [background-size:100%_4px] pointer-events-none opacity-20"></div>
+                          
+                          <div>
+                            <div className="font-bold text-sm leading-tight line-clamp-2 tracking-wide drop-shadow-md">{item.title}</div>
+                            {item.room && (
+                              <div className="text-[10px] opacity-80 mt-2 flex items-center gap-1 font-bold">
+                                <Terminal className="w-3 h-3" />
+                                {item.room}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-[8px] opacity-60 font-bold text-right uppercase tracking-widest">:: EDIT ::</div>
+                        </div>
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Plus className="text-cyan-500/50 w-6 h-6 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
-
-          {/* Day Rows */}
-          {days.map((day) => (
-            <div 
-              key={day.id} 
-              className="grid border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors"
-              style={{ gridTemplateColumns: `120px repeat(${timeSlots.length}, minmax(100px, 1fr))` }}
-            >
-              {/* Day Name Column */}
-              <div className="p-2 border-r border-gray-200 flex items-center justify-center bg-white z-10">
-                <input 
-                  type="text" 
-                  value={day.name}
-                  onChange={(e) => handleDayNameChange(day.id, e.target.value)}
-                  className="w-full text-center font-bold text-gray-700 bg-transparent border-none focus:ring-0 uppercase tracking-wide"
-                />
-              </div>
-
-              {/* Time Slots */}
-              {timeSlots.map((hour) => {
-                const item = getItem(day.id, hour);
-                const isLunch = hour === LUNCH_HOUR;
-
-                // Lunch Break Column
-                if (isLunch) {
-                  return (
-                    <div key={hour} className="bg-gray-100 border-r border-gray-100 flex items-center justify-center relative overflow-hidden">
-                       {/* Pattern for Lunch */}
-                       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:8px_8px]"></div>
-                       <span className="relative z-10 -rotate-90 text-xs font-bold text-gray-400 tracking-[0.2em] whitespace-nowrap">
-                         พักเที่ยง
-                       </span>
-                    </div>
-                  );
-                }
-
-                // Class Slot
-                return (
-                  <div 
-                    key={hour} 
-                    onClick={() => handleSlotClick(day.id, hour)}
-                    className="relative border-r border-gray-100 h-28 p-1 group cursor-pointer transition-all hover:bg-indigo-50/30"
-                  >
-                    {item ? (
-                      <div className={`h-full w-full rounded-lg p-2 shadow-sm border ${item.color} flex flex-col justify-between transition-transform hover:scale-[1.02]`}>
-                        <div>
-                          <div className="font-bold leading-tight line-clamp-2">{item.title}</div>
-                          {item.room && (
-                            <div className="text-xs opacity-75 mt-1 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50"></span>
-                              {item.room}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-[10px] opacity-60 font-medium text-right uppercase tracking-wider">แก้ไข</div>
-                      </div>
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Plus className="text-indigo-300 w-8 h-8" />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-
         </div>
       </div>
 
-      {/* Edit Modal (Simple Overlay) */}
+      {/* Edit Modal (Cyberpunk Style) */}
       {selectedSlot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setSelectedSlot(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setSelectedSlot(null)}>
           <div 
-            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200"
+            className="w-full max-w-sm rounded-none bg-slate-900 border border-cyan-500/50 p-1 shadow-[0_0_50px_rgba(6,182,212,0.2)] animate-in zoom-in-95 duration-200 relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">
-                แก้ไขช่วงเวลา ({days[selectedSlot.day].name} {selectedSlot.hour}:00)
-              </h3>
-              <button onClick={() => setSelectedSlot(null)} className="rounded-full p-1 hover:bg-gray-100">
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
+            {/* Modal Decor */}
+            <div className="absolute top-0 left-0 w-2 h-2 bg-cyan-500"></div>
+            <div className="absolute top-0 right-0 w-2 h-2 bg-cyan-500"></div>
+            <div className="absolute bottom-0 left-0 w-2 h-2 bg-cyan-500"></div>
+            <div className="absolute bottom-0 right-0 w-2 h-2 bg-cyan-500"></div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">วิชาเรียน / ชื่องาน</label>
-                <input
-                  type="text"
-                  autoFocus
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  placeholder="เช่น คณิตศาสตร์"
-                  value={editItem.title || ''}
-                  onChange={(e) => setEditItem({ ...editItem, title: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">ห้องเรียน / สถานที่ (ไม่บังคับ)</label>
-                <input
-                  type="text"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  placeholder="เช่น อาคาร 4 ห้อง 202"
-                  value={editItem.room || ''}
-                  onChange={(e) => setEditItem({ ...editItem, room: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">สีป้าย</label>
-                <div className="flex flex-wrap gap-2">
-                  {COLORS.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setEditItem({ ...editItem, color })}
-                      className={`h-8 w-8 rounded-full border-2 transition-transform hover:scale-110 ${color} ${
-                        editItem.color === color ? 'ring-2 ring-gray-400 ring-offset-2' : 'border-transparent'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-2">
-                 {getItem(selectedSlot.day, selectedSlot.hour) && (
-                  <button
-                    onClick={handleDelete}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 focus:outline-none"
-                  >
-                    <Trash2 className="w-4 h-4" /> ลบ
-                  </button>
-                )}
-                <button
-                  onClick={handleSave}
-                  className="flex flex-[2] items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  <Save className="w-4 h-4" /> บันทึก
+            <div className="bg-slate-900/90 p-6 border border-white/5 relative z-10">
+              <div className="mb-6 flex items-center justify-between border-b border-gray-800 pb-4">
+                <h3 className="text-lg font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-2 h-6 bg-cyan-500 block animate-pulse"></span>
+                  EDIT_NODE
+                </h3>
+                <button onClick={() => setSelectedSlot(null)} className="text-gray-500 hover:text-cyan-400 transition-colors">
+                  <X className="w-6 h-6" />
                 </button>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-cyan-600 uppercase tracking-widest">&gt;&gt; Input_Subject</label>
+                  <input
+                    type="text"
+                    autoFocus
+                    className="w-full bg-slate-950 border border-gray-700 text-cyan-100 px-4 py-3 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder-gray-700 font-bold"
+                    placeholder="ENTER_DATA..."
+                    value={editItem.title || ''}
+                    onChange={(e) => setEditItem({ ...editItem, title: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-cyan-600 uppercase tracking-widest">&gt;&gt; Coordinates (Room)</label>
+                  <input
+                    type="text"
+                    className="w-full bg-slate-950 border border-gray-700 text-cyan-100 px-4 py-3 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder-gray-700"
+                    placeholder="LOC_ID..."
+                    value={editItem.room || ''}
+                    onChange={(e) => setEditItem({ ...editItem, room: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-3 block text-xs font-bold text-cyan-600 uppercase tracking-widest">&gt;&gt; Tag_Color</label>
+                  <div className="flex flex-wrap gap-3">
+                    {COLORS.map((color, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setEditItem({ ...editItem, color })}
+                        className={`h-8 w-8 rounded border transition-all hover:scale-110 relative group ${
+                           color.split(' ')[0] // extract bg color class
+                        } ${editItem.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-110' : 'border-white/20'}`}
+                      >
+                         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 flex gap-3">
+                   {getItem(selectedSlot.day, selectedSlot.hour) && (
+                    <button
+                      onClick={handleDelete}
+                      className="flex flex-1 items-center justify-center gap-2 border border-red-900/50 bg-red-950/20 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-900/40 hover:text-red-400 focus:outline-none uppercase tracking-widest transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                  )}
+                  <button
+                    onClick={handleSave}
+                    className="flex flex-[2] items-center justify-center gap-2 bg-cyan-600 px-4 py-3 text-xs font-bold text-white hover:bg-cyan-500 focus:outline-none shadow-[0_0_15px_rgba(8,145,178,0.5)] hover:shadow-[0_0_20px_rgba(34,211,238,0.6)] uppercase tracking-widest transition-all"
+                  >
+                    <Save className="w-4 h-4" /> Save_Data
+                  </button>
+                </div>
               </div>
             </div>
           </div>
